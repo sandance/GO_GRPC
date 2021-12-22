@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
-	"context"
 
 	"github.com/sandance/GRPC-GO-COURSE/calculator/calculatorpb"
 	"google.golang.org/grpc"
@@ -12,16 +12,16 @@ import (
 
 type server struct{}
 
-func (*server) Sum(context.Context, req *calculatorpb.SumRequest) (res *calculatorpb.SumResponse, error) {
+func (*server) Sum(ctx context.Context, req *calculatorpb.SumRequest) (*calculatorpb.SumResponse, error) {
 	fmt.Printf("Received Sum RPC: %v", req)
 	firstNumber := req.FirstNumber
 	secondNumber := req.SecondNumber
 
 	sum := firstNumber + secondNumber
-	res := &calculatorpb.SumResponse {
+	result := &calculatorpb.SumResponse{
 		SumResult: sum,
 	}
-	return res, nil
+	return result, nil
 }
 func main() {
 	fmt.Println("Calculator Server")
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	calculatorpb.RegisterGreetServiceServer(s, &server{})
+	calculatorpb.RegisterCalculatorServiceServer(s, &server{})
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
