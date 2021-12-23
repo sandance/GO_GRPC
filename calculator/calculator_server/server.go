@@ -12,6 +12,7 @@ import (
 
 type server struct{}
 
+
 func (*server) Sum(ctx context.Context, req *calculatorpb.SumRequest) (*calculatorpb.SumResponse, error) {
 	fmt.Printf("Received Sum RPC: %v", req)
 	firstNumber := req.FirstNumber
