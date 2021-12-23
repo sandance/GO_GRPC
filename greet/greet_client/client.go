@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/sandance/GRPC-GO-COURSE/greet/greetpb"
@@ -19,8 +20,36 @@ func main() {
 
 	c := greetpb.NewGreetServiceClient(conn)
 	//fmt.Printf("Created client: %f", c)
-	doUnary(c)
+	//doUnary(c)
+	doServerStreaming(c)
 }
+
+func doServerStreaming(c greetpb.GreetServiceClient) {
+	fmt.Println("Starting to do a server Streaming RPC...")
+	req := &greetpb.GreetManyTimesRequest{
+		Greeting: &greetpb.Greeting{
+			FirstName: "Nazmul",
+			LastName:  "Islam",
+		},
+	}
+	resStream, err := c.GreetManyTimes(context.Background(), req)
+	if err != nil {
+		log.Printf("error while calling GreetManyTimes RPC: %v", err)
+	}
+	for {
+		msg, err := resStream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Error while reading stream: %v", err)
+		}
+		log.Printf("Resppnse from GreetManyTimes: %v", msg.GetResult())
+
+	}
+}
+
+/*
 
 func doUnary(c greetpb.GreetServiceClient) {
 	fmt.Println("Starting to do unary RPC....")
@@ -32,8 +61,8 @@ func doUnary(c greetpb.GreetServiceClient) {
 	}
 	res, err := c.Greet(context.Background(), req)
 	if err != nil {
-		log.Fatalf("Error while calling Greet RPC: %v", err)
+		log.Printf("Error while calling Greet RPC: %v", err)
 	}
 	log.Printf("Response from greet: %v", res.Result)
 
-}
+}*/
