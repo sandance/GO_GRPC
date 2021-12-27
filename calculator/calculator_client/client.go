@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"github.com/sandance/GRPC-GO-COURSE/calculator/calculatorpb"
 	"google.golang.org/grpc"
@@ -21,8 +22,49 @@ func main() {
 	c := calculatorpb.NewCalculatorServiceClient(conn)
 	//fmt.Printf("Created client: %f", c)
 	//doUnary(c)
-	doStreamPrimary(c)
+	//doStreamPrimary(c)
+	doBiDiStreaming(c)
 
+}
+
+func doBiDiStreaming(c calculatorpb.CalculatorServiceClient) {
+	fmt.Println("Starting to do a FindMaximum BiDi Streaming RPC....")
+	stream, err := c.FindMaximum(context.Background())
+
+	if err != nil {
+		log.Fatalf("Error while opening stream and calling FindMaximum: %v", err)
+	}
+
+	waitc := make(chan struct{})
+
+	go func() {
+		numbers := []int32{4, 7, 2, 18, 4, 6, 32}
+		for _, number := range numbers {
+			fmt.Printf("Sending number: %v\n", number)
+			stream.Send(&calculatorpb.FindMaximumRequest{
+				Number: number,
+			})
+			time.Sleep(1000 * time.Millisecond)
+		}
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Prioblem while reading server stream: %v", err)
+				break
+			}
+			maximum := res.GetMaximum()
+			fmt.Printf("Received a new maximum..:%v\n", maximum)
+		}
+		close(waitc)
+	}()
+	<-waitc
 }
 
 func doStreamPrimary(c calculatorpb.CalculatorServiceClient) {
